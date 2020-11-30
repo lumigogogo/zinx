@@ -1,3 +1,3 @@
-module lumi.com/go/zinx
+module github.com/lumigogogo/zinx
 
 go 1.13
