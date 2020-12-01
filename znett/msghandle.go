@@ -63,8 +63,7 @@ func (m *MsgHandle) startWork(queueID int) {
 	}
 }
 
-// Init ..
-func Init() {
+func init() {
 	newMsgHandle()
 	MessageHandle.startWorkPool()
 }

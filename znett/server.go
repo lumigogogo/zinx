@@ -26,7 +26,7 @@ var connID uint32
 
 // Start 启动服务
 func (s *Server) Start() {
-	fmt.Println("[ZINX] server name: ", s.Name, " listen ip: ", s.IP, " port: ", s.Port, " is start!")
+	fmt.Println("[START] server name: ", s.Name, " listen ip: ", s.IP, " port: ", s.Port, " is start!")
 
 	go func() {
 		listenAddr := fmt.Sprintf("%s:%d", s.IP, s.Port)
@@ -54,7 +54,7 @@ func (s *Server) Start() {
 
 			atomic.AddUint32(&connID, 1)
 			dealConn := NewConnection(connID, conn, s)
-			// fmt.Println("[START] get conn id, ", connID)
+			fmt.Println("[START] get conn id, ", connID)
 
 			go dealConn.Start()
 		}
@@ -83,7 +83,6 @@ func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 
 // NewServer create new server
 func NewServer(name, ip string, port int) ziface.IServer {
-	Init()
 	return &Server{
 		Name:       name,
 		IPVersion:  "tcp4",

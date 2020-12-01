@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sync"
 
 	"github.com/lumigogogo/zinx/ziface"
 )
@@ -18,7 +17,7 @@ type Connection struct {
 	s        ziface.IServer
 	msgChan  chan []byte
 	isClosed bool
-	sync.RWMutex
+	// sync.RWMutex
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -33,9 +32,9 @@ func (c *Connection) Start() {
 
 // Stop close
 func (c *Connection) Stop() {
-	fmt.Println("[Stop] conn: ", c.GetConnID())
-	c.Lock()
-	defer c.Unlock()
+	fmt.Println("[Stop] conn: ", c.connID, " is stoping...")
+	// c.Lock()
+	// defer c.Unlock()
 
 	if c.isClosed {
 		return
@@ -65,11 +64,6 @@ func (c *Connection) RemoteAddr() net.Addr {
 // SendMsg ..
 func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 	msg := NewMessage(msgID, uint32(len(data)), data)
-	c.RLock()
-	defer c.RUnlock()
-	if c.isClosed {
-		return errors.New("[SendMsg] conn is closed")
-	}
 
 	b, err := Pack(msg)
 	if err != nil {
@@ -82,7 +76,6 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 // StartRead ..
 func (c *Connection) StartRead() {
 	defer c.Stop()
-	fmt.Println("[StartRead] conn : ", c.connID)
 
 	select {
 	case <-c.ctx.Done():
@@ -90,20 +83,14 @@ func (c *Connection) StartRead() {
 	default:
 		for {
 			headData := make([]byte, DataHeadLen)
-			_, err := io.ReadFull(c.conn, headData)
-			if _, ok := err.(*net.OpError); ok {
-				return
-			}
+			_, err := io.ReadFull(c.conn, headData) //ReadFull 会把msg填充满为止
 			if err != nil {
-				fmt.Println("[StartRead]read head error: ", err)
+				fmt.Println("read head error: ", err)
 				return
 			}
 			msgHead, err := Unpack(headData)
-			if _, ok := err.(*net.OpError); ok {
-				return
-			}
 			if err != nil {
-				fmt.Println("[StartRead]server unpack err:", err)
+				fmt.Println("server unpack err:", err)
 				return
 			}
 
@@ -114,7 +101,7 @@ func (c *Connection) StartRead() {
 				//根据dataLen从io中读取字节流
 				_, err := io.ReadFull(c.conn, msg.GetData())
 				if err != nil {
-					fmt.Println("[StartRead]server unpack data err:", err)
+					fmt.Println("server unpack data err:", err)
 					return
 				}
 
@@ -127,15 +114,16 @@ func (c *Connection) StartRead() {
 			}
 		}
 	}
+	fmt.Println("[StartRead] wait done!")
 }
 
 // StartWrite ..
 func (c *Connection) StartWrite() {
-	fmt.Println("[StartWrite] conn : ", c.connID)
-	defer c.Stop()
+	defer fmt.Println("[StartWrite] conn id: ", c.connID, " write is done!")
 	for {
 		select {
 		case <-c.ctx.Done():
+			fmt.Println("[StartWrite] ctx done")
 			return
 
 		case data, ok := <-c.msgChan:
