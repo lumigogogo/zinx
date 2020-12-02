@@ -46,10 +46,10 @@ func (m *MsgHandle) startWorkPool() {
 		m.taskQueue[i] = make(chan ziface.IRequest, 50)
 		go m.startWork(i)
 	}
+	fmt.Println("[WORK] work num:", m.workPoolSize, " is starting")
 }
 
 func (m *MsgHandle) startWork(queueID int) {
-	fmt.Println("[WORK] work:", queueID, " is starting...")
 	queue := m.taskQueue[queueID]
 
 	for {

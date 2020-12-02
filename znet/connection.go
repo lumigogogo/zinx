@@ -29,11 +29,12 @@ func (c *Connection) Start() {
 
 	go c.StartRead()
 	go c.StartWrite()
+
+	fmt.Println("[Start] conn : ", c.connID, " start reader/writer")
 }
 
 // Stop close
 func (c *Connection) Stop() {
-	fmt.Println("[Stop] conn: ", c.GetConnID())
 	c.Lock()
 	defer c.Unlock()
 
@@ -42,9 +43,10 @@ func (c *Connection) Stop() {
 	}
 	c.isClosed = true
 
-	c.conn.Close()
 	c.cancel()
+	c.conn.Close()
 	close(c.msgChan)
+	fmt.Println("[Stop] conn: ", c.GetConnID())
 }
 
 // GetConnID ..
@@ -82,7 +84,6 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 // StartRead ..
 func (c *Connection) StartRead() {
 	defer c.Stop()
-	fmt.Println("[StartRead] conn : ", c.connID)
 
 	select {
 	case <-c.ctx.Done():
@@ -92,11 +93,11 @@ func (c *Connection) StartRead() {
 			headData := make([]byte, DataHeadLen)
 			_, err := io.ReadFull(c.conn, headData)
 			if _, ok := err.(*net.OpError); ok {
+				// fmt.Println("[StartRead] reader do stop conn")
 				return
 			}
 			if err != nil {
 				fmt.Println("[StartRead]read head error: ", err)
-				return
 			}
 			msgHead, err := Unpack(headData)
 			if _, ok := err.(*net.OpError); ok {
@@ -131,7 +132,6 @@ func (c *Connection) StartRead() {
 
 // StartWrite ..
 func (c *Connection) StartWrite() {
-	fmt.Println("[StartWrite] conn : ", c.connID)
 	defer c.Stop()
 	for {
 		select {
@@ -142,6 +142,7 @@ func (c *Connection) StartWrite() {
 			if ok {
 				_, err := c.conn.Write(data)
 				if _, ok := err.(*net.OpError); ok {
+					// fmt.Println("[StartWrite] writer do stop conn")
 					return
 				}
 				if err != nil {
