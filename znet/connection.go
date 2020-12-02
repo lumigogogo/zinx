@@ -92,12 +92,13 @@ func (c *Connection) StartRead() {
 		for {
 			headData := make([]byte, DataHeadLen)
 			_, err := io.ReadFull(c.conn, headData)
-			if _, ok := err.(*net.OpError); ok {
-				// fmt.Println("[StartRead] reader do stop conn")
-				return
-			}
+			// if _, ok := err.(*net.OpError); ok {
+			// 	// fmt.Println("[StartRead] reader do stop conn")
+			// 	return
+			// }
 			if err != nil {
 				fmt.Println("[StartRead]read head error: ", err)
+				return
 			}
 			msgHead, err := Unpack(headData)
 			if _, ok := err.(*net.OpError); ok {
@@ -141,12 +142,13 @@ func (c *Connection) StartWrite() {
 		case data, ok := <-c.msgChan:
 			if ok {
 				_, err := c.conn.Write(data)
-				if _, ok := err.(*net.OpError); ok {
-					// fmt.Println("[StartWrite] writer do stop conn")
-					return
-				}
+				// if _, ok := err.(*net.OpError); ok {
+				// 	// fmt.Println("[StartWrite] writer do stop conn")
+				// 	return
+				// }
 				if err != nil {
 					fmt.Println("[StartWrite] write to client error, ", err)
+					return
 				}
 			}
 		}
