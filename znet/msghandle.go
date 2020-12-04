@@ -3,6 +3,7 @@ package znet
 import (
 	"fmt"
 
+	"github.com/lumigogogo/zinx/utils"
 	"github.com/lumigogogo/zinx/ziface"
 )
 
@@ -17,11 +18,11 @@ type MsgHandle struct {
 var MessageHandle *MsgHandle
 
 // NewMsgHandle create new msg handle..
-func newMsgHandle() *MsgHandle {
+func NewMsgHandle() *MsgHandle {
 	MessageHandle = &MsgHandle{
 		apis:         make(map[uint32]ziface.IRouter),
-		taskQueue:    make([]chan ziface.IRequest, 10),
-		workPoolSize: 10,
+		taskQueue:    make([]chan ziface.IRequest, utils.GlobalConf.WorkPoolSize),
+		workPoolSize: utils.GlobalConf.WorkPoolSize,
 	}
 	return MessageHandle
 }
@@ -43,7 +44,7 @@ func (m *MsgHandle) do(request ziface.IRequest) {
 
 func (m *MsgHandle) startWorkPool() {
 	for i := 0; i < m.workPoolSize; i++ {
-		m.taskQueue[i] = make(chan ziface.IRequest, 50)
+		m.taskQueue[i] = make(chan ziface.IRequest, utils.GlobalConf.MaxWorkTaskNum)
 		go m.startWork(i)
 	}
 	fmt.Println("[WORK] work num:", m.workPoolSize, " is starting")
@@ -56,15 +57,8 @@ func (m *MsgHandle) startWork(queueID int) {
 		select {
 		case task, ok := <-queue:
 			if ok {
-				// fmt.Println("[WORK] work:", queueID, " get task: ", task)
 				m.do(task)
 			}
 		}
 	}
-}
-
-// Init ..
-func Init() {
-	newMsgHandle()
-	MessageHandle.startWorkPool()
 }

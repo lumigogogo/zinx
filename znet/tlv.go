@@ -3,7 +3,9 @@ package znet
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 
+	"github.com/lumigogogo/zinx/utils"
 	"github.com/lumigogogo/zinx/ziface"
 )
 
@@ -41,6 +43,10 @@ func Unpack(data []byte) (ziface.IMessage, error) {
 
 	if err := binary.Read(reader, binary.LittleEndian, &msg.DataLen); err != nil {
 		return nil, err
+	}
+
+	if utils.GlobalConf.MaxPacketSize > 0 && msg.DataLen > utils.GlobalConf.MaxPacketSize {
+		return nil, errors.New("too large msg data received")
 	}
 
 	return msg, nil

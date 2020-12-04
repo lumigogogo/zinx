@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/lumigogogo/zinx/utils"
 	"github.com/lumigogogo/zinx/ziface"
+	"github.com/lumigogogo/zinx/zlog"
 )
 
 // Server 监听连接
@@ -26,9 +28,12 @@ var connID uint32
 
 // Start 启动服务
 func (s *Server) Start() {
-	fmt.Println("[ZINX] server name: ", s.Name, " listen ip: ", s.IP, " port: ", s.Port, " is start!")
+	zlog.Debug("[ZINX] server name: ", s.Name, " listen ip: ", s.IP, " port: ", s.Port, " is start!")
 
 	go func() {
+
+		s.MsgHandler.startWorkPool()
+
 		listenAddr := fmt.Sprintf("%s:%d", s.IP, s.Port)
 		addr, err := net.ResolveTCPAddr(s.IPVersion, listenAddr)
 		if err != nil {
@@ -50,11 +55,9 @@ func (s *Server) Start() {
 				fmt.Println("[START] listener accept error! err: ", err)
 				continue
 			}
-			// fmt.Println("[START] get conn remote: ", conn.RemoteAddr())
 
 			atomic.AddUint32(&connID, 1)
 			dealConn := NewConnection(connID, conn, s)
-			// fmt.Println("[START] get conn id, ", connID)
 
 			go dealConn.Start()
 		}
@@ -82,14 +85,13 @@ func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 }
 
 // NewServer create new server
-func NewServer(name, ip string, port int) ziface.IServer {
-	Init()
+func NewServer() ziface.IServer {
 	return &Server{
-		Name:       name,
+		Name:       utils.GlobalConf.Name,
 		IPVersion:  "tcp4",
-		IP:         ip,
-		Port:       port,
-		MsgHandler: MessageHandle,
+		IP:         utils.GlobalConf.Host,
+		Port:       utils.GlobalConf.TCPPort,
+		MsgHandler: NewMsgHandle(),
 		ExitChan:   make(chan os.Signal),
 	}
 }

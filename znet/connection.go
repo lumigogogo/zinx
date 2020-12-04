@@ -8,6 +8,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/lumigogogo/zinx/utils"
 	"github.com/lumigogogo/zinx/ziface"
 )
 
@@ -162,6 +163,6 @@ func NewConnection(connID uint32, conn *net.TCPConn, server ziface.IServer) zifa
 		conn:     conn,
 		s:        server,
 		isClosed: false,
-		msgChan:  make(chan []byte, 512),
+		msgChan:  make(chan []byte, utils.GlobalConf.MaxMsgChanNum),
 	}
 }
